@@ -20,13 +20,14 @@ io.on('connection', function(socket){
     players[thisPlayerId] = player;
 
     socket.broadcast.emit('spawn', {id:thisPlayerId});
-     console.log("SERVER LOG: Sending spawn to new with ID ",thisPlayerId);
-     console.log("players array length: ", players.length);
+    socket.emit('registered', {id:thisPlayerId});
+    console.log("players array length: ", players.length);
 
-    for(var i = 0; i < players.length; i++){
-        socket.emit('spawn');
-       
-        playerCount++;
+    for(var playerId in players){
+        if(playerId == thisPlayerId)
+        continue;
+        socket.emit('spawn', players[playerId]);
+        console.log("SERVER LOG: Sending spawn to new with ID ",thisPlayerId);
     }
 
     socket.on('sayhello', function(data){
@@ -36,7 +37,8 @@ io.on('connection', function(socket){
 
     socket.on('disconnect', function(){
         console.log("SERVER LOG: player disconnected");
-        //playerCount--;
+        delete players[thisPlayerId];
+        socket.broadcast.emit('disconnected', {id:thisPlayerId})
     });
 
     socket.on('move', function(data){
@@ -45,5 +47,10 @@ io.on('connection', function(socket){
         socket.broadcast.emit("move", data);
     });
 
-    console.log("SERVER LOG --> Number of players connected: " + players.length);
+    socket.on('updatePosition', function(data) {
+        data.id = thisPlayerId;
+        socket.broadcast.emit('updatePosition', data);
+    });
+
+    
 });
